@@ -11,10 +11,10 @@ import java.lang.reflect.Modifier;
  */
 public class MapleBridge {
 
-    public Member target;
-    public Method backup;
+    private Member target;
+    private Method backup;
     public MethodHookParam param;
-    public MethodHook callback;
+    private MethodHook callback;
 
     private MapleBridge() {
     }
@@ -78,7 +78,14 @@ public class MapleBridge {
         }
     }
 
+    public boolean unhook() {
+        return doUnhook(target);
+    }
+
     public static MapleBridge hookMethod(Member target, MethodHook callback) {
+        if (!MapleUtils.hasInitHook()) {
+            throw new RuntimeException("Uninitialized the maple hook!");
+        }
         MapleBridge bridge = new MapleBridge();
         try {
             var callbackMethod = MapleBridge.class.getDeclaredMethod("callback", Object[].class);

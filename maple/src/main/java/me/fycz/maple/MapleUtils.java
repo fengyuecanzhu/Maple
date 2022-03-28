@@ -41,17 +41,22 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public final class MapleUtils {
     static {
-        System.loadLibrary("maple");
+        try {
+            System.loadLibrary("maple");
+        } catch (Throwable e) {
+            log(e);
+            throw new RuntimeException("Load maple hook library failed!");
+        }
     }
 
-    public static final String TAG = "MapleUtils";
+    private static final String TAG = "MapleUtils";
     /**
      * The system class loader which can be used to locate Android framework classes.
      * Application classes cannot be retrieved from it.
      *
      * @see ClassLoader#getSystemClassLoader
      */
-    public static final ClassLoader BOOTCLASSLOADER = MapleUtils.class.getClassLoader();
+    private static final ClassLoader BOOTCLASSLOADER = MapleUtils.class.getClassLoader();
 
     private static final ConcurrentHashMap<MemberCacheKey.Field, Optional<Field>> fieldCache = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<MemberCacheKey.Method, Optional<Method>> methodCache = new ConcurrentHashMap<>();
@@ -63,9 +68,9 @@ public final class MapleUtils {
     private MapleUtils() {
     }
 
-    public static native boolean initHook();
+    public static native boolean hasInitHook();
 
-    public static native boolean isHooked(Method method);
+    private static native boolean isHooked(Method method);
 
     public static void log(Throwable t) {
         String logStr = Log.getStackTraceString(t);
@@ -393,6 +398,28 @@ public final class MapleUtils {
      */
     public static MapleBridge findAndHookMethod(String className, ClassLoader classLoader, String methodName, Object... parameterTypesAndCallback) {
         return findAndHookMethod(findClass(className, classLoader), methodName, parameterTypesAndCallback);
+    }
+
+    /**
+     * Look up a method and judge it hooked whether or not. See {@link #findMethodIsHooked(String, ClassLoader, String, Object...)}
+     * for details.
+     */
+    public static boolean findMethodIsHooked(Class<?> clazz, String methodName, Object... parameterTypes){
+        return isHooked(findMethodExact(clazz, methodName, parameterTypes));
+    }
+
+    /**
+     * Look up a method and judge it hooked whether or not.
+     * @param className         The name of the class which implements the method.
+     * @param classLoader       The class loader for resolving the target and parameter classes.
+     * @param methodName        The target method name.
+     * @param parameterTypes    The parameter types of the target method.
+     * @return The method is hooked whether or not.
+     * @throws NoSuchMethodError  In case the method was not found.
+     * @throws ClassNotFoundError In case the target class or one of the parameter types couldn't be resolved.
+     */
+    public static boolean findMethodIsHooked(String className, ClassLoader classLoader, String methodName, Object... parameterTypes){
+        return isHooked(findMethodExact(findClass(className, classLoader), methodName, parameterTypes));
     }
 
     /**

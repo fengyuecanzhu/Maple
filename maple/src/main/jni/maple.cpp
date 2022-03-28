@@ -37,7 +37,7 @@ bool InlineUnhooker(void *func) {
 
 extern "C"
 JNIEXPORT jboolean JNICALL
-Java_me_fycz_maple_MapleUtils_initHook(JNIEnv *, jclass) {
+Java_me_fycz_maple_MapleUtils_hasInitHook(JNIEnv *, jclass) {
     return init_result;
 }
 
