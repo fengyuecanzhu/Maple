@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="10dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <androidx.appcompat.widget.AppCompatTextView
+            android:id="@+id/tv_console"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="10dp" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/bt_test"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="10dp"
+            android:text="测试函数" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/bt_hook_before"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="10dp"
+            android:text="Hook函数Before" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/bt_hook_after"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="10dp"
+            android:text="Hook函数After" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/bt_hook_replace"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="10dp"
+            android:text="Hook函数Replace" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/bt_unhook"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="10dp"
+            android:text="Unhook函数" />
+    </LinearLayout>
+
+</androidx.core.widget.NestedScrollView>
