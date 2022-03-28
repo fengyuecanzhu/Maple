@@ -37,20 +37,27 @@ bool InlineUnhooker(void *func) {
 
 extern "C"
 JNIEXPORT jboolean JNICALL
-Java_me_fycz_hook_MyTest_initHook(JNIEnv *, jclass) {
+Java_me_fycz_maple_MapleUtils_initHook(JNIEnv *, jclass) {
     return init_result;
 }
 
 extern "C"
 JNIEXPORT jobject JNICALL
-Java_me_fycz_hook_HookHelper_doHook(JNIEnv *env, jobject thiz, jobject original,
+Java_me_fycz_maple_MapleBridge_doHook(JNIEnv *env, jobject thiz, jobject original,
                                     jobject callback) {
     return lsplant::Hook(env, original, thiz, callback);
 }
+
 extern "C"
 JNIEXPORT jboolean JNICALL
-Java_me_fycz_hook_HookHelper_doUnhook(JNIEnv *env, jobject thiz, jobject target) {
+Java_me_fycz_maple_MapleBridge_doUnhook(JNIEnv *env, jobject thiz, jobject target) {
     return lsplant::UnHook(env, target);
+}
+
+extern "C"
+JNIEXPORT jboolean JNICALL
+Java_me_fycz_maple_MapleUtils_isHooked(JNIEnv *env, jclass , jobject method) {
+    return lsplant::IsHooked(env, method);
 }
 
 JNIEXPORT jint JNICALL
