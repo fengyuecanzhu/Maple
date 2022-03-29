@@ -204,15 +204,15 @@ public final class MapleUtils {
      * @param className   The class name in one of the formats mentioned above.
      * @param classLoader The class loader, or {@code null} for the boot class loader.
      * @return A reference to the class.
-     * @throws ClassNotFoundError In case the class was not found.
+     * @throws ClassNotFoundException In case the class was not found.
      */
-    public static Class<?> findClass(String className, ClassLoader classLoader) {
+    public static Class<?> findClass(String className, ClassLoader classLoader) throws ClassNotFoundException {
         if (classLoader == null)
             classLoader = BOOTCLASSLOADER;
         try {
             return ClassUtils.getClass(classLoader, className, false);
         } catch (ClassNotFoundException e) {
-            throw new ClassNotFoundError(e);
+            throw e;
         }
     }
     /**
@@ -226,7 +226,7 @@ public final class MapleUtils {
     public static Class<?> findClassIfExists(String className, ClassLoader classLoader) {
         try {
             return findClass(className, classLoader);
-        } catch (ClassNotFoundError e) {
+        } catch (ClassNotFoundException e) {
             return null;
         }
     }
@@ -238,7 +238,7 @@ public final class MapleUtils {
      * @param classLoader   The class loader, or {@code null} for the boot class loader.
      * @return  Indicate whether the operation has succeed.
      */
-    public static boolean findAndMakeClassInheritable(String className, ClassLoader classLoader){
+    public static boolean findAndMakeClassInheritable(String className, ClassLoader classLoader) throws ClassNotFoundException {
         return MapleBridge.makeClassInheritable(findClass(className, classLoader));
     }
 
@@ -248,14 +248,14 @@ public final class MapleUtils {
      * @param clazz     The class which either declares or inherits the field.
      * @param fieldName The field name.
      * @return A reference to the field.
-     * @throws NoSuchFieldError In case the field was not found.
+     * @throws NoSuchFieldException() In case the field was not found.
      */
-    public static Field findField(Class<?> clazz, String fieldName) {
+    public static Field findField(Class<?> clazz, String fieldName) throws NoSuchFieldException {
         var key = new MemberCacheKey.Field(clazz, fieldName);
         if (fieldCache.containsKey(key)) {
             Field field = fieldCache.get(key);
             if (field == null)
-                throw new NoSuchFieldError(key.toString());
+                throw new NoSuchFieldException(key.toString());
             return field;
         }
         try {
@@ -265,7 +265,7 @@ public final class MapleUtils {
             return field;
         } catch (NoSuchFieldException e) {
             fieldCache.put(key, null);
-            throw new NoSuchFieldError(key.toString());
+            throw new NoSuchFieldException(key.toString());
         }
     }
 
@@ -280,7 +280,7 @@ public final class MapleUtils {
     public static Field findFieldIfExists(Class<?> clazz, String fieldName) {
         try {
             return findField(clazz, fieldName);
-        } catch (NoSuchFieldError e) {
+        } catch (NoSuchFieldException e) {
             return null;
         }
     }
@@ -310,9 +310,9 @@ public final class MapleUtils {
      * @param clazz The class which either declares or inherits the field.
      * @param type  The type of the field.
      * @return A reference to the first field of the given type.
-     * @throws NoSuchFieldError In case no matching field was not found.
+     * @throws NoSuchFieldException() In case no matching field was not found.
      */
-    public static Field findFirstFieldByExactType(Class<?> clazz, Class<?> type) {
+    public static Field findFirstFieldByExactType(Class<?> clazz, Class<?> type) throws NoSuchFieldException {
         Class<?> clz = clazz;
         do {
             for (Field field : clz.getDeclaredFields()) {
@@ -323,14 +323,14 @@ public final class MapleUtils {
             }
         } while ((clz = clz.getSuperclass()) != null);
 
-        throw new NoSuchFieldError("Field of type " + type.getName() + " in class " + clazz.getName());
+        throw new NoSuchFieldException("Field of type " + type.getName() + " in class " + clazz.getName());
     }
 
     /**
      * Look up a method and hook it. See {@link #findAndHookMethod(String, ClassLoader, String, Object...)}
      * for details.
      */
-    public static MapleBridge findAndHookMethod(Class<?> clazz, String methodName, Object... parameterTypesAndCallback) {
+    public static MapleBridge findAndHookMethod(Class<?> clazz, String methodName, Object... parameterTypesAndCallback) throws ClassNotFoundException, NoSuchMethodException {
         if (parameterTypesAndCallback.length == 0 || !(parameterTypesAndCallback[parameterTypesAndCallback.length - 1] instanceof MethodHook))
             throw new IllegalArgumentException("no callback defined");
 
@@ -406,10 +406,10 @@ public final class MapleUtils {
      * @param methodName                The target method name.
      * @param parameterTypesAndCallback The parameter types of the target method, plus the callback.
      * @return An object which can be used to remove the callback again.
-     * @throws NoSuchMethodError  In case the method was not found.
-     * @throws ClassNotFoundError In case the target class or one of the parameter types couldn't be resolved.
+     * @throws NoSuchMethodException  In case the method was not found.
+     * @throws ClassNotFoundException In case the target class or one of the parameter types couldn't be resolved.
      */
-    public static MapleBridge findAndHookMethod(String className, ClassLoader classLoader, String methodName, Object... parameterTypesAndCallback) {
+    public static MapleBridge findAndHookMethod(String className, ClassLoader classLoader, String methodName, Object... parameterTypesAndCallback) throws ClassNotFoundException, NoSuchMethodException {
         return findAndHookMethod(findClass(className, classLoader), methodName, parameterTypesAndCallback);
     }
 
@@ -417,7 +417,7 @@ public final class MapleUtils {
      * Look up a method and judge it hooked whether or not. See {@link #findMethodIsHooked(String, ClassLoader, String, Object...)}
      * for details.
      */
-    public static boolean findMethodIsHooked(Class<?> clazz, String methodName, Object... parameterTypes){
+    public static boolean findMethodIsHooked(Class<?> clazz, String methodName, Object... parameterTypes) throws ClassNotFoundException, NoSuchMethodException {
         return MapleBridge.isHooked(findMethodExact(clazz, methodName, parameterTypes));
     }
 
@@ -428,10 +428,10 @@ public final class MapleUtils {
      * @param methodName        The target method name.
      * @param parameterTypes    The parameter types of the target method.
      * @return The method is hooked whether or not.
-     * @throws NoSuchMethodError  In case the method was not found.
-     * @throws ClassNotFoundError In case the target class or one of the parameter types couldn't be resolved.
+     * @throws NoSuchMethodException  In case the method was not found.
+     * @throws ClassNotFoundException In case the target class or one of the parameter types couldn't be resolved.
      */
-    public static boolean findMethodIsHooked(String className, ClassLoader classLoader, String methodName, Object... parameterTypes){
+    public static boolean findMethodIsHooked(String className, ClassLoader classLoader, String methodName, Object... parameterTypes) throws ClassNotFoundException, NoSuchMethodException {
         return MapleBridge.isHooked(findMethodExact(findClass(className, classLoader), methodName, parameterTypes));
     }
 
@@ -439,7 +439,7 @@ public final class MapleUtils {
      * Look up a method in a class and set it to accessible.
      * See {@link #findMethodExact(String, ClassLoader, String, Object...)} for details.
      */
-    public static Method findMethodExact(Class<?> clazz, String methodName, Object... parameterTypes) {
+    public static Method findMethodExact(Class<?> clazz, String methodName, Object... parameterTypes) throws ClassNotFoundException, NoSuchMethodException {
         return findMethodExact(clazz, methodName, getParameterClasses(clazz.getClassLoader(), parameterTypes));
     }
 
@@ -450,7 +450,7 @@ public final class MapleUtils {
     public static Method findMethodExactIfExists(Class<?> clazz, String methodName, Object... parameterTypes) {
         try {
             return findMethodExact(clazz, methodName, parameterTypes);
-        } catch (ClassNotFoundError | NoSuchMethodError e) {
+        } catch (ClassNotFoundException | NoSuchMethodException e) {
             return null;
         }
     }
@@ -467,10 +467,10 @@ public final class MapleUtils {
      * @param methodName     The target method name.
      * @param parameterTypes The parameter types of the target method.
      * @return A reference to the method.
-     * @throws NoSuchMethodError  In case the method was not found.
-     * @throws ClassNotFoundError In case the target class or one of the parameter types couldn't be resolved.
+     * @throws NoSuchMethodException  In case the method was not found.
+     * @throws ClassNotFoundException In case the target class or one of the parameter types couldn't be resolved.
      */
-    public static Method findMethodExact(String className, ClassLoader classLoader, String methodName, Object... parameterTypes) {
+    public static Method findMethodExact(String className, ClassLoader classLoader, String methodName, Object... parameterTypes) throws ClassNotFoundException, NoSuchMethodException {
         return findMethodExact(findClass(className, classLoader), methodName, getParameterClasses(classLoader, parameterTypes));
     }
 
@@ -488,7 +488,7 @@ public final class MapleUtils {
     public static Method findMethodExactIfExists(String className, ClassLoader classLoader, String methodName, Object... parameterTypes) {
         try {
             return findMethodExact(className, classLoader, methodName, parameterTypes);
-        } catch (ClassNotFoundError | NoSuchMethodError e) {
+        } catch (ClassNotFoundException | NoSuchMethodException e) {
             return null;
         }
     }
@@ -499,13 +499,13 @@ public final class MapleUtils {
      *
      * <p>This variant requires that you already have reference to all the parameter types.
      */
-    public static Method findMethodExact(Class<?> clazz, String methodName, Class<?>... parameterTypes) {
+    public static Method findMethodExact(Class<?> clazz, String methodName, Class<?>... parameterTypes) throws NoSuchMethodException {
         var key = new MemberCacheKey.Method(clazz, methodName, parameterTypes, true);
 
         if (methodCache.containsKey(key)) {
             Method method = methodCache.get(key);
             if (method == null)
-                throw new NoSuchMethodError(key.toString());
+                throw new NoSuchMethodException(key.toString());
             return method;
         }
         try {
@@ -515,7 +515,7 @@ public final class MapleUtils {
             return method;
         } catch (NoSuchMethodException e) {
             methodCache.put(key, null);
-            throw new NoSuchMethodError(key.toString());
+            throw new NoSuchMethodException(key.toString());
         }
     }
 
@@ -568,16 +568,16 @@ public final class MapleUtils {
      * @param methodName     The method name.
      * @param parameterTypes The types of the method's parameters.
      * @return A reference to the best-matching method.
-     * @throws NoSuchMethodError In case no suitable method was found.
+     * @throws NoSuchMethodException In case no suitable method was found.
      */
-    public static Method findMethodBestMatch(Class<?> clazz, String methodName, Class<?>... parameterTypes) {
+    public static Method findMethodBestMatch(Class<?> clazz, String methodName, Class<?>... parameterTypes) throws NoSuchMethodException {
         // then find the best match
         var key = new MemberCacheKey.Method(clazz, methodName, parameterTypes, false);
 
         if (methodCache.containsKey(key)) {
             Method method = methodCache.get(key);
             if (method == null)
-                throw new NoSuchMethodError(key.toString());
+                throw new NoSuchMethodException(key.toString());
             return method;
         }
 
@@ -585,7 +585,7 @@ public final class MapleUtils {
             Method method = findMethodExact(clazz, methodName, parameterTypes);
             methodCache.put(key, method);
             return method;
-        } catch (NoSuchMethodError ignored) {}
+        } catch (NoSuchMethodException ignored) {}
 
         Method bestMatch = null;
         Class<?> clz = key.clazz;
@@ -618,7 +618,7 @@ public final class MapleUtils {
             methodCache.put(key, bestMatch);
             return bestMatch;
         } else {
-            NoSuchMethodError e = new NoSuchMethodError(key.toString());
+            NoSuchMethodException e = new NoSuchMethodException(key.toString());
             methodCache.put(key, null);
             throw e;
         }
@@ -630,7 +630,7 @@ public final class MapleUtils {
      * <p>See {@link #findMethodBestMatch(Class, String, Class...)} for details. This variant
      * determines the parameter types from the classes of the given objects.
      */
-    public static Method findMethodBestMatch(Class<?> clazz, String methodName, Object... args) {
+    public static Method findMethodBestMatch(Class<?> clazz, String methodName, Object... args) throws NoSuchMethodException {
         return findMethodBestMatch(clazz, methodName, getParameterTypes(args));
     }
 
@@ -641,7 +641,7 @@ public final class MapleUtils {
      * determines the parameter types from the classes of the given objects. For any item that is
      * {@code null}, the type is taken from {@code parameterTypes} instead.
      */
-    public static Method findMethodBestMatch(Class<?> clazz, String methodName, Class<?>[] parameterTypes, Object[] args) {
+    public static Method findMethodBestMatch(Class<?> clazz, String methodName, Class<?>[] parameterTypes, Object[] args) throws NoSuchMethodException {
         Class<?>[] argsClasses = null;
         for (int i = 0; i < parameterTypes.length; i++) {
             if (parameterTypes[i] != null)
@@ -668,12 +668,12 @@ public final class MapleUtils {
      * Retrieve classes from an array, where each element might either be a Class
      * already, or a String with the full class name.
      */
-    private static Class<?>[] getParameterClasses(ClassLoader classLoader, Object[] parameterTypesAndCallback) {
+    private static Class<?>[] getParameterClasses(ClassLoader classLoader, Object[] parameterTypesAndCallback) throws ClassNotFoundException {
         Class<?>[] parameterClasses = null;
         for (int i = parameterTypesAndCallback.length - 1; i >= 0; i--) {
             Object type = parameterTypesAndCallback[i];
             if (type == null)
-                throw new ClassNotFoundError("parameter type must not be null", null);
+                throw new ClassNotFoundException("parameter type must not be null", null);
 
             // ignore trailing callback
             if (type instanceof MethodHook)
@@ -687,7 +687,7 @@ public final class MapleUtils {
             else if (type instanceof String)
                 parameterClasses[i] = findClass((String) type, classLoader);
             else
-                throw new ClassNotFoundError("parameter type must either be specified as Class or String", null);
+                throw new ClassNotFoundException("parameter type must either be specified as Class or String", null);
         }
 
         // if there are no arguments for the method
@@ -726,7 +726,7 @@ public final class MapleUtils {
      * Look up a constructor of a class and set it to accessible.
      * See {@link #findMethodExact(String, ClassLoader, String, Object...)} for details.
      */
-    public static Constructor<?> findConstructorExact(Class<?> clazz, Object... parameterTypes) {
+    public static Constructor<?> findConstructorExact(Class<?> clazz, Object... parameterTypes) throws NoSuchMethodException, ClassNotFoundException {
         return findConstructorExact(clazz, getParameterClasses(clazz.getClassLoader(), parameterTypes));
     }
 
@@ -737,7 +737,7 @@ public final class MapleUtils {
     public static Constructor<?> findConstructorExactIfExists(Class<?> clazz, Object... parameterTypes) {
         try {
             return findConstructorExact(clazz, parameterTypes);
-        } catch (ClassNotFoundError | NoSuchMethodError e) {
+        } catch (NoSuchMethodException | ClassNotFoundException e) {
             return null;
         }
     }
@@ -746,7 +746,7 @@ public final class MapleUtils {
      * Look up a constructor of a class and set it to accessible.
      * See {@link #findMethodExact(String, ClassLoader, String, Object...)} for details.
      */
-    public static Constructor<?> findConstructorExact(String className, ClassLoader classLoader, Object... parameterTypes) {
+    public static Constructor<?> findConstructorExact(String className, ClassLoader classLoader, Object... parameterTypes) throws NoSuchMethodException, ClassNotFoundException {
         return findConstructorExact(findClass(className, classLoader), getParameterClasses(classLoader, parameterTypes));
     }
 
@@ -757,7 +757,7 @@ public final class MapleUtils {
     public static Constructor<?> findConstructorExactIfExists(String className, ClassLoader classLoader, Object... parameterTypes) {
         try {
             return findConstructorExact(className, classLoader, parameterTypes);
-        } catch (ClassNotFoundError | NoSuchMethodError e) {
+        } catch (NoSuchMethodException | ClassNotFoundException e) {
             return null;
         }
     }
@@ -766,13 +766,13 @@ public final class MapleUtils {
      * Look up a constructor of a class and set it to accessible.
      * See {@link #findMethodExact(String, ClassLoader, String, Object...)} for details.
      */
-    public static Constructor<?> findConstructorExact(Class<?> clazz, Class<?>... parameterTypes) {
+    public static Constructor<?> findConstructorExact(Class<?> clazz, Class<?>... parameterTypes) throws NoSuchMethodException {
         var key = new MemberCacheKey.Constructor(clazz, parameterTypes, true);
 
         if (constructorCache.containsKey(key)) {
             Constructor<?> constructor = constructorCache.get(key);
             if (constructor == null)
-                throw new NoSuchMethodError(key.toString());
+                throw new NoSuchMethodException(key.toString());
             return constructor;
         }
 
@@ -783,7 +783,7 @@ public final class MapleUtils {
             return constructor;
         } catch (NoSuchMethodException e) {
             constructorCache.put(key, null);
-            throw new NoSuchMethodError(key.toString());
+            throw new NoSuchMethodException(key.toString());
         }
     }
 
@@ -791,7 +791,7 @@ public final class MapleUtils {
      * Look up a constructor and hook it. See {@link #findAndHookMethod(String, ClassLoader, String, Object...)}
      * for details.
      */
-    public static MapleBridge findAndHookConstructor(Class<?> clazz, Object... parameterTypesAndCallback) {
+    public static MapleBridge findAndHookConstructor(Class<?> clazz, Object... parameterTypesAndCallback) throws NoSuchMethodException, ClassNotFoundException {
         if (parameterTypesAndCallback.length == 0 || !(parameterTypesAndCallback[parameterTypesAndCallback.length - 1] instanceof MethodHook))
             throw new IllegalArgumentException("no callback defined");
 
@@ -805,7 +805,7 @@ public final class MapleUtils {
      * Look up a constructor and hook it. See {@link #findAndHookMethod(String, ClassLoader, String, Object...)}
      * for details.
      */
-    public static MapleBridge findAndHookConstructor(String className, ClassLoader classLoader, Object... parameterTypesAndCallback) {
+    public static MapleBridge findAndHookConstructor(String className, ClassLoader classLoader, Object... parameterTypesAndCallback) throws NoSuchMethodException, ClassNotFoundException {
         return findAndHookConstructor(findClass(className, classLoader), parameterTypesAndCallback);
     }
 
@@ -814,13 +814,13 @@ public final class MapleUtils {
      *
      * <p>See {@link #findMethodBestMatch(Class, String, Class...)} for details.
      */
-    public static Constructor<?> findConstructorBestMatch(Class<?> clazz, Class<?>... parameterTypes) {
+    public static Constructor<?> findConstructorBestMatch(Class<?> clazz, Class<?>... parameterTypes) throws NoSuchMethodException {
         // then find the best match
         var key = new MemberCacheKey.Constructor(clazz, parameterTypes, false);
         if (constructorCache.containsKey(key)) {
             Constructor<?> constructor = constructorCache.get(key);
             if (constructor == null)
-                throw new NoSuchMethodError(key.toString());
+                throw new NoSuchMethodException(key.toString());
             return constructor;
         }
 
@@ -828,7 +828,7 @@ public final class MapleUtils {
             Constructor<?> constructor = findConstructorExact(clazz, parameterTypes);
             constructorCache.put(key, constructor);
             return constructor;
-        } catch (NoSuchMethodError ignored) {}
+        } catch (NoSuchMethodException ignored) { }
 
         Constructor<?> bestMatch = null;
         Constructor<?>[] constructors = key.clazz.getDeclaredConstructors();
@@ -853,7 +853,7 @@ public final class MapleUtils {
             constructorCache.put(key, bestMatch);
             return bestMatch;
         } else {
-            NoSuchMethodError e = new NoSuchMethodError(key.toString());
+            NoSuchMethodException e = new NoSuchMethodException(key.toString());
             constructorCache.put(key, null);
             throw e;
         }
@@ -865,7 +865,7 @@ public final class MapleUtils {
      * <p>See {@link #findMethodBestMatch(Class, String, Class...)} for details. This variant
      * determines the parameter types from the classes of the given objects.
      */
-    public static Constructor<?> findConstructorBestMatch(Class<?> clazz, Object... args) {
+    public static Constructor<?> findConstructorBestMatch(Class<?> clazz, Object... args) throws NoSuchMethodException {
         return findConstructorBestMatch(clazz, getParameterTypes(args));
     }
 
@@ -876,7 +876,7 @@ public final class MapleUtils {
      * determines the parameter types from the classes of the given objects. For any item that is
      * {@code null}, the type is taken from {@code parameterTypes} instead.
      */
-    public static Constructor<?> findConstructorBestMatch(Class<?> clazz, Class<?>[] parameterTypes, Object[] args) {
+    public static Constructor<?> findConstructorBestMatch(Class<?> clazz, Class<?>[] parameterTypes, Object[] args) throws NoSuchMethodException {
         Class<?>[] argsClasses = null;
         for (int i = 0; i < parameterTypes.length; i++) {
             if (parameterTypes[i] != null)
@@ -888,36 +888,14 @@ public final class MapleUtils {
         return findConstructorBestMatch(clazz, parameterTypes);
     }
 
-    /**
-     * Thrown when a class loader is unable to find a class. Unlike {@link ClassNotFoundException},
-     * callers are not forced to explicitly catch this. If uncaught, the error will be passed to the
-     * next caller in the stack.
-     */
-    public static final class ClassNotFoundError extends Error {
-        private static final long serialVersionUID = -1070936889459514628L;
-
-        /**
-         * @hide
-         */
-        public ClassNotFoundError(Throwable cause) {
-            super(cause);
-        }
-
-        /**
-         * @hide
-         */
-        public ClassNotFoundError(String detailMessage, Throwable cause) {
-            super(detailMessage, cause);
-        }
-    }
 
     /**
      * Returns the index of the first parameter declared with the given type.
      *
-     * @throws NoSuchFieldError if there is no parameter with that type.
+     * @throws NoSuchFieldException() if there is no parameter with that type.
      * @hide
      */
-    public static int getFirstParameterIndexByType(Member method, Class<?> type) {
+    public static int getFirstParameterIndexByType(Member method, Class<?> type) throws NoSuchFieldException {
         Class<?>[] classes = (method instanceof Method) ?
                 ((Method) method).getParameterTypes() : ((Constructor) method).getParameterTypes();
         for (int i = 0; i < classes.length; i++) {
@@ -925,16 +903,16 @@ public final class MapleUtils {
                 return i;
             }
         }
-        throw new NoSuchFieldError("No parameter of type " + type + " found in " + method);
+        throw new NoSuchFieldException("No parameter of type " + type + " found in " + method);
     }
 
     /**
      * Returns the index of the parameter declared with the given type, ensuring that there is exactly one such parameter.
      *
-     * @throws NoSuchFieldError if there is no or more than one parameter with that type.
+     * @throws NoSuchFieldException() if there is no or more than one parameter with that type.
      * @hide
      */
-    public static int getParameterIndexByType(Member method, Class<?> type) {
+    public static int getParameterIndexByType(Member method, Class<?> type) throws NoSuchFieldException {
         Class<?>[] classes = (method instanceof Method) ?
                 ((Method) method).getParameterTypes() : ((Constructor) method).getParameterTypes();
         int idx = -1;
@@ -943,14 +921,14 @@ public final class MapleUtils {
                 if (idx == -1) {
                     idx = i;
                 } else {
-                    throw new NoSuchFieldError("More than one parameter of type " + type + " found in " + method);
+                    throw new NoSuchFieldException("More than one parameter of type " + type + " found in " + method);
                 }
             }
         }
         if (idx != -1) {
             return idx;
         } else {
-            throw new NoSuchFieldError("No parameter of type " + type + " found in " + method);
+            throw new NoSuchFieldException("No parameter of type " + type + " found in " + method);
         }
     }
 
@@ -959,14 +937,14 @@ public final class MapleUtils {
     /**
      * Sets the value of an object field in the given object instance. A class reference is not sufficient! See also {@link #findField}.
      */
-    public static void setObjectField(Object obj, String fieldName, Object value) {
+    public static void setObjectField(Object obj, String fieldName, Object value) throws NoSuchFieldException, IllegalAccessException {
         try {
             findField(obj.getClass(), fieldName).set(obj, value);
         } catch (IllegalAccessException e) {
             // should not happen
             log(e);
-            throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+            throw new IllegalAccessException(e.getMessage());
+        } catch (IllegalArgumentException | NoSuchFieldException e) {
             throw e;
         }
     }
@@ -974,14 +952,14 @@ public final class MapleUtils {
     /**
      * Sets the value of a {@code boolean} field in the given object instance. A class reference is not sufficient! See also {@link #findField}.
      */
-    public static void setBooleanField(Object obj, String fieldName, boolean value) {
+    public static void setBooleanField(Object obj, String fieldName, boolean value) throws NoSuchFieldException, IllegalAccessException {
         try {
             findField(obj.getClass(), fieldName).setBoolean(obj, value);
         } catch (IllegalAccessException e) {
             // should not happen
             log(e);
-            throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+            throw new IllegalAccessException(e.getMessage());
+        } catch (IllegalArgumentException | NoSuchFieldException e) {
             throw e;
         }
     }
@@ -989,14 +967,14 @@ public final class MapleUtils {
     /**
      * Sets the value of a {@code byte} field in the given object instance. A class reference is not sufficient! See also {@link #findField}.
      */
-    public static void setByteField(Object obj, String fieldName, byte value) {
+    public static void setByteField(Object obj, String fieldName, byte value) throws NoSuchFieldException, IllegalAccessException {
         try {
             findField(obj.getClass(), fieldName).setByte(obj, value);
         } catch (IllegalAccessException e) {
             // should not happen
             log(e);
-            throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+            throw new IllegalAccessException(e.getMessage());
+        } catch (IllegalArgumentException | NoSuchFieldException e) {
             throw e;
         }
     }
@@ -1004,14 +982,14 @@ public final class MapleUtils {
     /**
      * Sets the value of a {@code char} field in the given object instance. A class reference is not sufficient! See also {@link #findField}.
      */
-    public static void setCharField(Object obj, String fieldName, char value) {
+    public static void setCharField(Object obj, String fieldName, char value) throws NoSuchFieldException, IllegalAccessException {
         try {
             findField(obj.getClass(), fieldName).setChar(obj, value);
         } catch (IllegalAccessException e) {
             // should not happen
             log(e);
-            throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+            throw new IllegalAccessException(e.getMessage());
+        } catch (IllegalArgumentException | NoSuchFieldException e) {
             throw e;
         }
     }
@@ -1019,14 +997,14 @@ public final class MapleUtils {
     /**
      * Sets the value of a {@code double} field in the given object instance. A class reference is not sufficient! See also {@link #findField}.
      */
-    public static void setDoubleField(Object obj, String fieldName, double value) {
+    public static void setDoubleField(Object obj, String fieldName, double value) throws NoSuchFieldException, IllegalAccessException {
         try {
             findField(obj.getClass(), fieldName).setDouble(obj, value);
         } catch (IllegalAccessException e) {
             // should not happen
             log(e);
-            throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+            throw new IllegalAccessException(e.getMessage());
+        } catch (IllegalArgumentException | NoSuchFieldException e) {
             throw e;
         }
     }
@@ -1034,14 +1012,14 @@ public final class MapleUtils {
     /**
      * Sets the value of a {@code float} field in the given object instance. A class reference is not sufficient! See also {@link #findField}.
      */
-    public static void setFloatField(Object obj, String fieldName, float value) {
+    public static void setFloatField(Object obj, String fieldName, float value) throws NoSuchFieldException, IllegalAccessException {
         try {
             findField(obj.getClass(), fieldName).setFloat(obj, value);
         } catch (IllegalAccessException e) {
             // should not happen
             log(e);
-            throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+            throw new IllegalAccessException(e.getMessage());
+        } catch (IllegalArgumentException | NoSuchFieldException e) {
             throw e;
         }
     }
@@ -1049,14 +1027,14 @@ public final class MapleUtils {
     /**
      * Sets the value of an {@code int} field in the given object instance. A class reference is not sufficient! See also {@link #findField}.
      */
-    public static void setIntField(Object obj, String fieldName, int value) {
+    public static void setIntField(Object obj, String fieldName, int value) throws NoSuchFieldException, IllegalAccessException {
         try {
             findField(obj.getClass(), fieldName).setInt(obj, value);
         } catch (IllegalAccessException e) {
             // should not happen
             log(e);
-            throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+            throw new IllegalAccessException(e.getMessage());
+        } catch (IllegalArgumentException | NoSuchFieldException e) {
             throw e;
         }
     }
@@ -1064,14 +1042,14 @@ public final class MapleUtils {
     /**
      * Sets the value of a {@code long} field in the given object instance. A class reference is not sufficient! See also {@link #findField}.
      */
-    public static void setLongField(Object obj, String fieldName, long value) {
+    public static void setLongField(Object obj, String fieldName, long value) throws NoSuchFieldException, IllegalAccessException {
         try {
             findField(obj.getClass(), fieldName).setLong(obj, value);
         } catch (IllegalAccessException e) {
             // should not happen
             log(e);
-            throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+            throw new IllegalAccessException(e.getMessage());
+        } catch (IllegalArgumentException | NoSuchFieldException e) {
             throw e;
         }
     }
@@ -1079,14 +1057,14 @@ public final class MapleUtils {
     /**
      * Sets the value of a {@code short} field in the given object instance. A class reference is not sufficient! See also {@link #findField}.
      */
-    public static void setShortField(Object obj, String fieldName, short value) {
+    public static void setShortField(Object obj, String fieldName, short value) throws NoSuchFieldException, IllegalAccessException {
         try {
             findField(obj.getClass(), fieldName).setShort(obj, value);
         } catch (IllegalAccessException e) {
             // should not happen
             log(e);
-            throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+            throw new IllegalAccessException(e.getMessage());
+        } catch (IllegalArgumentException | NoSuchFieldException e) {
             throw e;
         }
     }
@@ -1096,14 +1074,14 @@ public final class MapleUtils {
     /**
      * Returns the value of an object field in the given object instance. A class reference is not sufficient! See also {@link #findField}.
      */
-    public static Object getObjectField(Object obj, String fieldName) {
+    public static Object getObjectField(Object obj, String fieldName) throws IllegalAccessException, NoSuchFieldException {
         try {
             return findField(obj.getClass(), fieldName).get(obj);
         } catch (IllegalAccessException e) {
             // should not happen
             log(e);
-            throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+            throw new IllegalAccessException(e.getMessage());
+        } catch (IllegalArgumentException | NoSuchFieldException e) {
             throw e;
         }
     }
@@ -1111,7 +1089,7 @@ public final class MapleUtils {
     /**
      * For inner classes, returns the surrounding instance, i.e. the {@code this} reference of the surrounding class.
      */
-    public static Object getSurroundingThis(Object obj) {
+    public static Object getSurroundingThis(Object obj) throws NoSuchFieldException, IllegalAccessException {
         return getObjectField(obj, "this$0");
     }
 
@@ -1119,14 +1097,14 @@ public final class MapleUtils {
      * Returns the value of a {@code boolean} field in the given object instance. A class reference is not sufficient! See also {@link #findField}.
      */
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-    public static boolean getBooleanField(Object obj, String fieldName) {
+    public static boolean getBooleanField(Object obj, String fieldName) throws IllegalAccessException, NoSuchFieldException {
         try {
             return findField(obj.getClass(), fieldName).getBoolean(obj);
         } catch (IllegalAccessException e) {
             // should not happen
             log(e);
-            throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+            throw new IllegalAccessException(e.getMessage());
+        } catch (IllegalArgumentException | NoSuchFieldException e) {
             throw e;
         }
     }
@@ -1134,14 +1112,14 @@ public final class MapleUtils {
     /**
      * Returns the value of a {@code byte} field in the given object instance. A class reference is not sufficient! See also {@link #findField}.
      */
-    public static byte getByteField(Object obj, String fieldName) {
+    public static byte getByteField(Object obj, String fieldName) throws IllegalAccessException, NoSuchFieldException {
         try {
             return findField(obj.getClass(), fieldName).getByte(obj);
         } catch (IllegalAccessException e) {
             // should not happen
             log(e);
-            throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+            throw new IllegalAccessException(e.getMessage());
+        } catch (IllegalArgumentException | NoSuchFieldException e) {
             throw e;
         }
     }
@@ -1149,14 +1127,14 @@ public final class MapleUtils {
     /**
      * Returns the value of a {@code char} field in the given object instance. A class reference is not sufficient! See also {@link #findField}.
      */
-    public static char getCharField(Object obj, String fieldName) {
+    public static char getCharField(Object obj, String fieldName) throws NoSuchFieldException, IllegalAccessException {
         try {
             return findField(obj.getClass(), fieldName).getChar(obj);
         } catch (IllegalAccessException e) {
             // should not happen
             log(e);
-            throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+            throw new IllegalAccessException(e.getMessage());
+        } catch (IllegalArgumentException | NoSuchFieldException e) {
             throw e;
         }
     }
@@ -1164,14 +1142,14 @@ public final class MapleUtils {
     /**
      * Returns the value of a {@code double} field in the given object instance. A class reference is not sufficient! See also {@link #findField}.
      */
-    public static double getDoubleField(Object obj, String fieldName) {
+    public static double getDoubleField(Object obj, String fieldName) throws IllegalAccessException, NoSuchFieldException {
         try {
             return findField(obj.getClass(), fieldName).getDouble(obj);
         } catch (IllegalAccessException e) {
             // should not happen
             log(e);
-            throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+            throw new IllegalAccessException(e.getMessage());
+        } catch (IllegalArgumentException | NoSuchFieldException e) {
             throw e;
         }
     }
@@ -1179,14 +1157,14 @@ public final class MapleUtils {
     /**
      * Returns the value of a {@code float} field in the given object instance. A class reference is not sufficient! See also {@link #findField}.
      */
-    public static float getFloatField(Object obj, String fieldName) {
+    public static float getFloatField(Object obj, String fieldName) throws NoSuchFieldException, IllegalAccessException {
         try {
             return findField(obj.getClass(), fieldName).getFloat(obj);
         } catch (IllegalAccessException e) {
             // should not happen
             log(e);
-            throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+            throw new IllegalAccessException(e.getMessage());
+        } catch (IllegalArgumentException | NoSuchFieldException e) {
             throw e;
         }
     }
@@ -1194,14 +1172,14 @@ public final class MapleUtils {
     /**
      * Returns the value of an {@code int} field in the given object instance. A class reference is not sufficient! See also {@link #findField}.
      */
-    public static int getIntField(Object obj, String fieldName) {
+    public static int getIntField(Object obj, String fieldName) throws IllegalAccessException, NoSuchFieldException {
         try {
             return findField(obj.getClass(), fieldName).getInt(obj);
         } catch (IllegalAccessException e) {
             // should not happen
             log(e);
-            throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+            throw new IllegalAccessException(e.getMessage());
+        } catch (IllegalArgumentException | NoSuchFieldException e) {
             throw e;
         }
     }
@@ -1209,14 +1187,14 @@ public final class MapleUtils {
     /**
      * Returns the value of a {@code long} field in the given object instance. A class reference is not sufficient! See also {@link #findField}.
      */
-    public static long getLongField(Object obj, String fieldName) {
+    public static long getLongField(Object obj, String fieldName) throws IllegalAccessException, NoSuchFieldException {
         try {
             return findField(obj.getClass(), fieldName).getLong(obj);
         } catch (IllegalAccessException e) {
             // should not happen
             log(e);
-            throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+            throw new IllegalAccessException(e.getMessage());
+        } catch (IllegalArgumentException | NoSuchFieldException e) {
             throw e;
         }
     }
@@ -1224,14 +1202,14 @@ public final class MapleUtils {
     /**
      * Returns the value of a {@code short} field in the given object instance. A class reference is not sufficient! See also {@link #findField}.
      */
-    public static short getShortField(Object obj, String fieldName) {
+    public static short getShortField(Object obj, String fieldName) throws NoSuchFieldException, IllegalAccessException {
         try {
             return findField(obj.getClass(), fieldName).getShort(obj);
         } catch (IllegalAccessException e) {
             // should not happen
             log(e);
-            throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+            throw new IllegalAccessException(e.getMessage());
+        } catch (IllegalArgumentException | NoSuchFieldException e) {
             throw e;
         }
     }
@@ -1241,14 +1219,14 @@ public final class MapleUtils {
     /**
      * Sets the value of a static object field in the given class. See also {@link #findField}.
      */
-    public static void setStaticObjectField(Class<?> clazz, String fieldName, Object value) {
+    public static void setStaticObjectField(Class<?> clazz, String fieldName, Object value) throws NoSuchFieldException, IllegalAccessException {
         try {
             findField(clazz, fieldName).set(null, value);
         } catch (IllegalAccessException e) {
             // should not happen
             log(e);
-            throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+            throw new IllegalAccessException(e.getMessage());
+        } catch (IllegalArgumentException | NoSuchFieldException e) {
             throw e;
         }
     }
@@ -1256,14 +1234,14 @@ public final class MapleUtils {
     /**
      * Sets the value of a static {@code boolean} field in the given class. See also {@link #findField}.
      */
-    public static void setStaticBooleanField(Class<?> clazz, String fieldName, boolean value) {
+    public static void setStaticBooleanField(Class<?> clazz, String fieldName, boolean value) throws IllegalAccessException, NoSuchFieldException {
         try {
             findField(clazz, fieldName).setBoolean(null, value);
         } catch (IllegalAccessException e) {
             // should not happen
             log(e);
-            throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+            throw new IllegalAccessException(e.getMessage());
+        } catch (IllegalArgumentException | NoSuchFieldException e) {
             throw e;
         }
     }
@@ -1271,14 +1249,14 @@ public final class MapleUtils {
     /**
      * Sets the value of a static {@code byte} field in the given class. See also {@link #findField}.
      */
-    public static void setStaticByteField(Class<?> clazz, String fieldName, byte value) {
+    public static void setStaticByteField(Class<?> clazz, String fieldName, byte value) throws NoSuchFieldException, IllegalAccessException {
         try {
             findField(clazz, fieldName).setByte(null, value);
         } catch (IllegalAccessException e) {
             // should not happen
             log(e);
-            throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+            throw new IllegalAccessException(e.getMessage());
+        } catch (IllegalArgumentException | NoSuchFieldException e) {
             throw e;
         }
     }
@@ -1286,14 +1264,14 @@ public final class MapleUtils {
     /**
      * Sets the value of a static {@code char} field in the given class. See also {@link #findField}.
      */
-    public static void setStaticCharField(Class<?> clazz, String fieldName, char value) {
+    public static void setStaticCharField(Class<?> clazz, String fieldName, char value) throws NoSuchFieldException, IllegalAccessException {
         try {
             findField(clazz, fieldName).setChar(null, value);
         } catch (IllegalAccessException e) {
             // should not happen
             log(e);
-            throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+            throw new IllegalAccessException(e.getMessage());
+        } catch (IllegalArgumentException | NoSuchFieldException e) {
             throw e;
         }
     }
@@ -1301,14 +1279,14 @@ public final class MapleUtils {
     /**
      * Sets the value of a static {@code double} field in the given class. See also {@link #findField}.
      */
-    public static void setStaticDoubleField(Class<?> clazz, String fieldName, double value) {
+    public static void setStaticDoubleField(Class<?> clazz, String fieldName, double value) throws NoSuchFieldException, IllegalAccessException {
         try {
             findField(clazz, fieldName).setDouble(null, value);
         } catch (IllegalAccessException e) {
             // should not happen
             log(e);
-            throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+            throw new IllegalAccessException(e.getMessage());
+        } catch (IllegalArgumentException | NoSuchFieldException e) {
             throw e;
         }
     }
@@ -1316,14 +1294,14 @@ public final class MapleUtils {
     /**
      * Sets the value of a static {@code float} field in the given class. See also {@link #findField}.
      */
-    public static void setStaticFloatField(Class<?> clazz, String fieldName, float value) {
+    public static void setStaticFloatField(Class<?> clazz, String fieldName, float value) throws NoSuchFieldException, IllegalAccessException {
         try {
             findField(clazz, fieldName).setFloat(null, value);
         } catch (IllegalAccessException e) {
             // should not happen
             log(e);
-            throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+            throw new IllegalAccessException(e.getMessage());
+        } catch (IllegalArgumentException | NoSuchFieldException e) {
             throw e;
         }
     }
@@ -1331,14 +1309,14 @@ public final class MapleUtils {
     /**
      * Sets the value of a static {@code int} field in the given class. See also {@link #findField}.
      */
-    public static void setStaticIntField(Class<?> clazz, String fieldName, int value) {
+    public static void setStaticIntField(Class<?> clazz, String fieldName, int value) throws NoSuchFieldException, IllegalAccessException {
         try {
             findField(clazz, fieldName).setInt(null, value);
         } catch (IllegalAccessException e) {
             // should not happen
             log(e);
-            throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+            throw new IllegalAccessException(e.getMessage());
+        } catch (IllegalArgumentException | NoSuchFieldException e) {
             throw e;
         }
     }
@@ -1346,14 +1324,14 @@ public final class MapleUtils {
     /**
      * Sets the value of a static {@code long} field in the given class. See also {@link #findField}.
      */
-    public static void setStaticLongField(Class<?> clazz, String fieldName, long value) {
+    public static void setStaticLongField(Class<?> clazz, String fieldName, long value) throws IllegalAccessException, NoSuchFieldException {
         try {
             findField(clazz, fieldName).setLong(null, value);
         } catch (IllegalAccessException e) {
             // should not happen
             log(e);
-            throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+            throw new IllegalAccessException(e.getMessage());
+        } catch (IllegalArgumentException | NoSuchFieldException e) {
             throw e;
         }
     }
@@ -1361,14 +1339,14 @@ public final class MapleUtils {
     /**
      * Sets the value of a static {@code short} field in the given class. See also {@link #findField}.
      */
-    public static void setStaticShortField(Class<?> clazz, String fieldName, short value) {
+    public static void setStaticShortField(Class<?> clazz, String fieldName, short value) throws NoSuchFieldException, IllegalAccessException {
         try {
             findField(clazz, fieldName).setShort(null, value);
         } catch (IllegalAccessException e) {
             // should not happen
             log(e);
-            throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+            throw new IllegalAccessException(e.getMessage());
+        } catch (IllegalArgumentException | NoSuchFieldException e) {
             throw e;
         }
     }
@@ -1378,14 +1356,14 @@ public final class MapleUtils {
     /**
      * Returns the value of a static object field in the given class. See also {@link #findField}.
      */
-    public static Object getStaticObjectField(Class<?> clazz, String fieldName) {
+    public static Object getStaticObjectField(Class<?> clazz, String fieldName) throws NoSuchFieldException, IllegalAccessException {
         try {
             return findField(clazz, fieldName).get(null);
         } catch (IllegalAccessException e) {
             // should not happen
             log(e);
-            throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+            throw new IllegalAccessException(e.getMessage());
+        } catch (IllegalArgumentException | NoSuchFieldException e) {
             throw e;
         }
     }
@@ -1393,14 +1371,14 @@ public final class MapleUtils {
     /**
      * Returns the value of a static {@code boolean} field in the given class. See also {@link #findField}.
      */
-    public static boolean getStaticBooleanField(Class<?> clazz, String fieldName) {
+    public static boolean getStaticBooleanField(Class<?> clazz, String fieldName) throws NoSuchFieldException, IllegalAccessException {
         try {
             return findField(clazz, fieldName).getBoolean(null);
         } catch (IllegalAccessException e) {
             // should not happen
             log(e);
-            throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+            throw new IllegalAccessException(e.getMessage());
+        } catch (IllegalArgumentException | NoSuchFieldException e) {
             throw e;
         }
     }
@@ -1408,14 +1386,14 @@ public final class MapleUtils {
     /**
      * Sets the value of a static {@code byte} field in the given class. See also {@link #findField}.
      */
-    public static byte getStaticByteField(Class<?> clazz, String fieldName) {
+    public static byte getStaticByteField(Class<?> clazz, String fieldName) throws IllegalAccessException, NoSuchFieldException {
         try {
             return findField(clazz, fieldName).getByte(null);
         } catch (IllegalAccessException e) {
             // should not happen
             log(e);
-            throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+            throw new IllegalAccessException(e.getMessage());
+        } catch (IllegalArgumentException | NoSuchFieldException e) {
             throw e;
         }
     }
@@ -1423,14 +1401,14 @@ public final class MapleUtils {
     /**
      * Sets the value of a static {@code char} field in the given class. See also {@link #findField}.
      */
-    public static char getStaticCharField(Class<?> clazz, String fieldName) {
+    public static char getStaticCharField(Class<?> clazz, String fieldName) throws IllegalAccessException, NoSuchFieldException {
         try {
             return findField(clazz, fieldName).getChar(null);
         } catch (IllegalAccessException e) {
             // should not happen
             log(e);
-            throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+            throw new IllegalAccessException(e.getMessage());
+        } catch (IllegalArgumentException | NoSuchFieldException e) {
             throw e;
         }
     }
@@ -1438,14 +1416,14 @@ public final class MapleUtils {
     /**
      * Sets the value of a static {@code double} field in the given class. See also {@link #findField}.
      */
-    public static double getStaticDoubleField(Class<?> clazz, String fieldName) {
+    public static double getStaticDoubleField(Class<?> clazz, String fieldName) throws NoSuchFieldException, IllegalAccessException {
         try {
             return findField(clazz, fieldName).getDouble(null);
         } catch (IllegalAccessException e) {
             // should not happen
             log(e);
-            throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+            throw new IllegalAccessException(e.getMessage());
+        } catch (IllegalArgumentException | NoSuchFieldException e) {
             throw e;
         }
     }
@@ -1453,14 +1431,14 @@ public final class MapleUtils {
     /**
      * Sets the value of a static {@code float} field in the given class. See also {@link #findField}.
      */
-    public static float getStaticFloatField(Class<?> clazz, String fieldName) {
+    public static float getStaticFloatField(Class<?> clazz, String fieldName) throws IllegalAccessException, NoSuchFieldException {
         try {
             return findField(clazz, fieldName).getFloat(null);
         } catch (IllegalAccessException e) {
             // should not happen
             log(e);
-            throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+            throw new IllegalAccessException(e.getMessage());
+        } catch (IllegalArgumentException | NoSuchFieldException e) {
             throw e;
         }
     }
@@ -1468,14 +1446,14 @@ public final class MapleUtils {
     /**
      * Sets the value of a static {@code int} field in the given class. See also {@link #findField}.
      */
-    public static int getStaticIntField(Class<?> clazz, String fieldName) {
+    public static int getStaticIntField(Class<?> clazz, String fieldName) throws IllegalAccessException, NoSuchFieldException {
         try {
             return findField(clazz, fieldName).getInt(null);
         } catch (IllegalAccessException e) {
             // should not happen
             log(e);
-            throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+            throw new IllegalAccessException(e.getMessage());
+        } catch (IllegalArgumentException | NoSuchFieldException e) {
             throw e;
         }
     }
@@ -1483,14 +1461,14 @@ public final class MapleUtils {
     /**
      * Sets the value of a static {@code long} field in the given class. See also {@link #findField}.
      */
-    public static long getStaticLongField(Class<?> clazz, String fieldName) {
+    public static long getStaticLongField(Class<?> clazz, String fieldName) throws IllegalAccessException, NoSuchFieldException {
         try {
             return findField(clazz, fieldName).getLong(null);
         } catch (IllegalAccessException e) {
             // should not happen
             log(e);
-            throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+            throw new IllegalAccessException(e.getMessage());
+        } catch (IllegalArgumentException | NoSuchFieldException e) {
             throw e;
         }
     }
@@ -1498,14 +1476,14 @@ public final class MapleUtils {
     /**
      * Sets the value of a static {@code short} field in the given class. See also {@link #findField}.
      */
-    public static short getStaticShortField(Class<?> clazz, String fieldName) {
+    public static short getStaticShortField(Class<?> clazz, String fieldName) throws IllegalAccessException, NoSuchFieldException {
         try {
             return findField(clazz, fieldName).getShort(null);
         } catch (IllegalAccessException e) {
             // should not happen
             log(e);
-            throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+            throw new IllegalAccessException(e.getMessage());
+        } catch (IllegalArgumentException | NoSuchFieldException e) {
             throw e;
         }
     }
@@ -1519,20 +1497,18 @@ public final class MapleUtils {
      * @param obj        The object instance. A class reference is not sufficient!
      * @param methodName The method name.
      * @param args       The arguments for the method call.
-     * @throws NoSuchMethodError     In case no suitable method was found.
-     * @throws InvocationTargetError In case an exception was thrown by the invoked method.
+     * @throws NoSuchMethodException     In case no suitable method was found.
+     * @throws InvocationTargetException() In case an exception was thrown by the invoked method.
      */
-    public static Object callMethod(Object obj, String methodName, Object... args) {
+    public static Object callMethod(Object obj, String methodName, Object... args) throws InvocationTargetException, NoSuchMethodException, IllegalAccessException {
         try {
             return findMethodBestMatch(obj.getClass(), methodName, args).invoke(obj, args);
         } catch (IllegalAccessException e) {
             // should not happen
             log(e);
-            throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+            throw new IllegalAccessException(e.getMessage());
+        } catch (IllegalArgumentException | InvocationTargetException | NoSuchMethodException e) {
             throw e;
-        } catch (InvocationTargetException e) {
-            throw new InvocationTargetError(e.getCause());
         }
     }
 
@@ -1543,17 +1519,15 @@ public final class MapleUtils {
      * <p>This variant allows you to specify parameter types, which can help in case there are multiple
      * methods with the same name, especially if you call it with {@code null} parameters.
      */
-    public static Object callMethod(Object obj, String methodName, Class<?>[] parameterTypes, Object... args) {
+    public static Object callMethod(Object obj, String methodName, Class<?>[] parameterTypes, Object... args) throws InvocationTargetException, NoSuchMethodException, IllegalAccessException {
         try {
             return findMethodBestMatch(obj.getClass(), methodName, parameterTypes, args).invoke(obj, args);
         } catch (IllegalAccessException e) {
             // should not happen
             log(e);
-            throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+            throw new IllegalAccessException(e.getMessage());
+        } catch (IllegalArgumentException | InvocationTargetException | NoSuchMethodException e) {
             throw e;
-        } catch (InvocationTargetException e) {
-            throw new InvocationTargetError(e.getCause());
         }
     }
 
@@ -1564,20 +1538,18 @@ public final class MapleUtils {
      * @param clazz      The class reference.
      * @param methodName The method name.
      * @param args       The arguments for the method call.
-     * @throws NoSuchMethodError     In case no suitable method was found.
-     * @throws InvocationTargetError In case an exception was thrown by the invoked method.
+     * @throws NoSuchMethodException     In case no suitable method was found.
+     * @throws InvocationTargetException() In case an exception was thrown by the invoked method.
      */
-    public static Object callStaticMethod(Class<?> clazz, String methodName, Object... args) {
+    public static Object callStaticMethod(Class<?> clazz, String methodName, Object... args) throws InvocationTargetException, NoSuchMethodException, IllegalAccessException {
         try {
             return findMethodBestMatch(clazz, methodName, args).invoke(null, args);
         } catch (IllegalAccessException e) {
             // should not happen
             log(e);
-            throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+            throw new IllegalAccessException(e.getMessage());
+        } catch (IllegalArgumentException | InvocationTargetException | NoSuchMethodException e) {
             throw e;
-        } catch (InvocationTargetException e) {
-            throw new InvocationTargetError(e.getCause());
         }
     }
 
@@ -1588,35 +1560,15 @@ public final class MapleUtils {
      * <p>This variant allows you to specify parameter types, which can help in case there are multiple
      * methods with the same name, especially if you call it with {@code null} parameters.
      */
-    public static Object callStaticMethod(Class<?> clazz, String methodName, Class<?>[] parameterTypes, Object... args) {
+    public static Object callStaticMethod(Class<?> clazz, String methodName, Class<?>[] parameterTypes, Object... args) throws InvocationTargetException, NoSuchMethodException, IllegalAccessException {
         try {
             return findMethodBestMatch(clazz, methodName, parameterTypes, args).invoke(null, args);
         } catch (IllegalAccessException e) {
             // should not happen
             log(e);
-            throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+            throw new IllegalAccessException(e.getMessage());
+        } catch (IllegalArgumentException | InvocationTargetException | NoSuchMethodException e) {
             throw e;
-        } catch (InvocationTargetException e) {
-            throw new InvocationTargetError(e.getCause());
-        }
-    }
-
-    /**
-     * This class provides a wrapper for an exception thrown by a method invocation.
-     *
-     * @see #callMethod(Object, String, Object...)
-     * @see #callStaticMethod(Class, String, Object...)
-     * @see #newInstance(Class, Object...)
-     */
-    public static final class InvocationTargetError extends Error {
-        private static final long serialVersionUID = -1070936889459514628L;
-
-        /**
-         * @hide
-         */
-        public InvocationTargetError(Throwable cause) {
-            super(cause);
         }
     }
 
@@ -1628,23 +1580,19 @@ public final class MapleUtils {
      *
      * @param clazz The class reference.
      * @param args  The arguments for the constructor call.
-     * @throws NoSuchMethodError     In case no suitable constructor was found.
-     * @throws InvocationTargetError In case an exception was thrown by the invoked method.
+     * @throws NoSuchMethodException     In case no suitable constructor was found.
+     * @throws java.lang.reflect.InvocationTargetException() In case an exception was thrown by the invoked method.
      * @throws InstantiationError    In case the class cannot be instantiated.
      */
-    public static Object newInstance(Class<?> clazz, Object... args) {
+    public static Object newInstance(Class<?> clazz, Object... args) throws InstantiationException, InvocationTargetException, NoSuchMethodException, IllegalAccessException {
         try {
             return findConstructorBestMatch(clazz, args).newInstance(args);
         } catch (IllegalAccessException e) {
             // should not happen
             log(e);
-            throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+            throw new IllegalAccessException(e.getMessage());
+        } catch (IllegalArgumentException | InvocationTargetException | InstantiationException | NoSuchMethodException e) {
             throw e;
-        } catch (InvocationTargetException e) {
-            throw new InvocationTargetError(e.getCause());
-        } catch (InstantiationException e) {
-            throw new InstantiationError(e.getMessage());
         }
     }
 
@@ -1655,19 +1603,15 @@ public final class MapleUtils {
      * <p>This variant allows you to specify parameter types, which can help in case there are multiple
      * constructors with the same name, especially if you call it with {@code null} parameters.
      */
-    public static Object newInstance(Class<?> clazz, Class<?>[] parameterTypes, Object... args) {
+    public static Object newInstance(Class<?> clazz, Class<?>[] parameterTypes, Object... args) throws InvocationTargetException, InstantiationException, NoSuchMethodException, IllegalAccessException {
         try {
             return findConstructorBestMatch(clazz, parameterTypes, args).newInstance(args);
         } catch (IllegalAccessException e) {
             // should not happen
             log(e);
-            throw new IllegalAccessError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+            throw new IllegalAccessException(e.getMessage());
+        } catch (IllegalArgumentException | InvocationTargetException | InstantiationException | NoSuchMethodException e) {
             throw e;
-        } catch (InvocationTargetException e) {
-            throw new InvocationTargetError(e.getCause());
-        } catch (InstantiationException e) {
-            throw new InstantiationError(e.getMessage());
         }
     }
 
