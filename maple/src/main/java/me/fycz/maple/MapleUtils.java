@@ -65,6 +65,33 @@ public final class MapleUtils {
 
     private static final HashMap<String, ThreadLocal<AtomicInteger>> sMethodDepth = new HashMap<>();
 
+    private static Field emptyFiled;
+    private static Method emptyMethod;
+    private static Constructor<?> emptyConstructor;
+    private static byte empty;
+    private void empty(){}
+
+    public static Field getEmptyFiled() throws NoSuchFieldException {
+        if (emptyFiled == null) {
+            emptyFiled = MapleUtils.class.getDeclaredField("empty");
+        }
+        return emptyFiled;
+    }
+
+    public static Method getEmptyMethod() throws NoSuchMethodException {
+        if (emptyMethod == null) {
+            emptyMethod = MapleUtils.class.getDeclaredMethod("empty");
+        }
+        return emptyMethod;
+    }
+
+    public static Constructor<?> getEmptyConstructor() throws NoSuchMethodException {
+        if (emptyConstructor == null){
+            emptyConstructor = MapleUtils.class.getDeclaredConstructor();
+        }
+        return emptyConstructor;
+    }
+
     private MapleUtils() {
     }
 
@@ -254,7 +281,7 @@ public final class MapleUtils {
         var key = new MemberCacheKey.Field(clazz, fieldName);
         if (fieldCache.containsKey(key)) {
             Field field = fieldCache.get(key);
-            if (field == null)
+            if (field == getEmptyFiled())
                 throw new NoSuchFieldException(key.toString());
             return field;
         }
@@ -264,7 +291,7 @@ public final class MapleUtils {
             fieldCache.put(key, field);
             return field;
         } catch (NoSuchFieldException e) {
-            fieldCache.put(key, null);
+            fieldCache.put(key, getEmptyFiled());
             throw new NoSuchFieldException(key.toString());
         }
     }
@@ -504,7 +531,7 @@ public final class MapleUtils {
 
         if (methodCache.containsKey(key)) {
             Method method = methodCache.get(key);
-            if (method == null)
+            if (method == getEmptyMethod())
                 throw new NoSuchMethodException(key.toString());
             return method;
         }
@@ -514,7 +541,7 @@ public final class MapleUtils {
             methodCache.put(key, method);
             return method;
         } catch (NoSuchMethodException e) {
-            methodCache.put(key, null);
+            methodCache.put(key, getEmptyMethod());
             throw new NoSuchMethodException(key.toString());
         }
     }
@@ -576,7 +603,7 @@ public final class MapleUtils {
 
         if (methodCache.containsKey(key)) {
             Method method = methodCache.get(key);
-            if (method == null)
+            if (method == getEmptyMethod())
                 throw new NoSuchMethodException(key.toString());
             return method;
         }
@@ -619,7 +646,7 @@ public final class MapleUtils {
             return bestMatch;
         } else {
             NoSuchMethodException e = new NoSuchMethodException(key.toString());
-            methodCache.put(key, null);
+            methodCache.put(key, getEmptyMethod());
             throw e;
         }
     }
@@ -771,7 +798,7 @@ public final class MapleUtils {
 
         if (constructorCache.containsKey(key)) {
             Constructor<?> constructor = constructorCache.get(key);
-            if (constructor == null)
+            if (constructor == getEmptyConstructor())
                 throw new NoSuchMethodException(key.toString());
             return constructor;
         }
@@ -782,7 +809,7 @@ public final class MapleUtils {
             constructorCache.put(key, constructor);
             return constructor;
         } catch (NoSuchMethodException e) {
-            constructorCache.put(key, null);
+            constructorCache.put(key, getEmptyConstructor());
             throw new NoSuchMethodException(key.toString());
         }
     }
@@ -819,7 +846,7 @@ public final class MapleUtils {
         var key = new MemberCacheKey.Constructor(clazz, parameterTypes, false);
         if (constructorCache.containsKey(key)) {
             Constructor<?> constructor = constructorCache.get(key);
-            if (constructor == null)
+            if (constructor == getEmptyConstructor())
                 throw new NoSuchMethodException(key.toString());
             return constructor;
         }
@@ -854,7 +881,7 @@ public final class MapleUtils {
             return bestMatch;
         } else {
             NoSuchMethodException e = new NoSuchMethodException(key.toString());
-            constructorCache.put(key, null);
+            constructorCache.put(key, getEmptyConstructor());
             throw e;
         }
     }
