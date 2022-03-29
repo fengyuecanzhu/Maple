@@ -35,56 +35,68 @@ class MainActivity : AppCompatActivity() {
 
         binding.btHookBefore.setOnClickListener {
             console(it)
-            bridge =
-                MapleUtils.findAndHookMethod(
-                    "me.fycz.demo.MainActivity",
-                    this.classLoader,
-                    "normal",
-                    String::class.java,
-                    Int::class.java,
-                    Float::class.java,
-                    object : MethodHook() {
-                        override fun beforeHookedMethod(param: MapleBridge.MethodHookParam) {
-                            param.args[0] = "Hook函数Before-----" + param.args[0]
+            try {
+                bridge =
+                    MapleUtils.findAndHookMethod(
+                        "me.fycz.demo.MainActivity2",
+                        this.classLoader,
+                        "normal",
+                        String::class.java,
+                        Int::class.java,
+                        Float::class.java,
+                        object : MethodHook() {
+                            override fun beforeHookedMethod(param: MapleBridge.MethodHookParam) {
+                                param.args[0] = "Hook函数Before-----" + param.args[0]
+                            }
                         }
-                    }
-                )
+                    )
+            } catch (e: Exception) {
+                console(e.stackTraceToString())
+            }
         }
 
         binding.btHookAfter.setOnClickListener {
             console(it)
-            bridge =
-                MapleUtils.findAndHookMethod(
-                    "me.fycz.demo.MainActivity",
-                    this.classLoader,
-                    "normal",
-                    String::class.java,
-                    Int::class.java,
-                    Float::class.java,
-                    object : MethodHook() {
-                        override fun afterHookedMethod(param: MapleBridge.MethodHookParam) {
-                            console("Hook函数After-----" + param.args[0])
+            try {
+                bridge =
+                    MapleUtils.findAndHookMethod(
+                        "me.fycz.demo.MainActivity",
+                        this.classLoader,
+                        "normal",
+                        String::class.java,
+                        Int::class.java,
+                        Float::class.java,
+                        object : MethodHook() {
+                            override fun afterHookedMethod(param: MapleBridge.MethodHookParam) {
+                                console("Hook函数After-----" + param.args[0])
+                            }
                         }
-                    }
-                )
+                    )
+            } catch (e: Exception) {
+                console(e.stackTraceToString())
+            }
         }
 
         binding.btHookReplace.setOnClickListener {
             console(it)
-            bridge =
-                MapleUtils.findAndHookMethod(
-                    "me.fycz.demo.MainActivity",
-                    this.classLoader,
-                    "normal",
-                    String::class.java,
-                    Int::class.java,
-                    Float::class.java,
-                    object : MethodReplacement() {
-                        override fun replaceHookedMethod(param: MapleBridge.MethodHookParam?): Any {
-                            return "Hook函数replace-----"
+            try {
+                bridge =
+                    MapleUtils.findAndHookMethod(
+                        "me.fycz.demo.MainActivity",
+                        this.classLoader,
+                        "normal1",
+                        String::class.java,
+                        Int::class.java,
+                        Float::class.java,
+                        object : MethodReplacement() {
+                            override fun replaceHookedMethod(param: MapleBridge.MethodHookParam?): Any {
+                                return "Hook函数replace-----"
+                            }
                         }
-                    }
-                )
+                    )
+            } catch (e: Exception) {
+                console(e.stackTraceToString())
+            }
         }
 
         binding.btUnhook.setOnClickListener {
