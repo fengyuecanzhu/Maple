@@ -38,7 +38,7 @@ class MainActivity : AppCompatActivity() {
             try {
                 bridge =
                     MapleUtils.findAndHookMethod(
-                        "me.fycz.demo.MainActivity2",
+                        "me.fycz.demo.MainActivity",
                         this.classLoader,
                         "normal",
                         String::class.java,
@@ -84,7 +84,7 @@ class MainActivity : AppCompatActivity() {
                     MapleUtils.findAndHookMethod(
                         "me.fycz.demo.MainActivity",
                         this.classLoader,
-                        "normal1",
+                        "normal",
                         String::class.java,
                         Int::class.java,
                         Float::class.java,
