@@ -21,7 +21,13 @@ public class MapleBridge {
 
     private native Method doHook(Member original, Method callback);
 
-    private native boolean doUnhook(Member target);
+    public static native boolean doUnhook(Member target);
+
+    public static native boolean hasInitHook();
+
+    public static native boolean isHooked(Member method);
+
+    public static native boolean makeClassInheritable(Class<?> clazz);
 
     public Object callback(Object[] args) throws Throwable {
         param = new MethodHookParam();
@@ -83,8 +89,11 @@ public class MapleBridge {
     }
 
     public static MapleBridge hookMethod(Member target, MethodHook callback) {
-        if (!MapleUtils.hasInitHook()) {
+        if (!hasInitHook()) {
             throw new RuntimeException("Uninitialized the maple hook!");
+        }
+        if (isHooked(target)) {
+            doUnhook(target);
         }
         MapleBridge bridge = new MapleBridge();
         try {

@@ -68,10 +68,6 @@ public final class MapleUtils {
     private MapleUtils() {
     }
 
-    public static native boolean hasInitHook();
-
-    private static native boolean isHooked(Method method);
-
     public static void log(Throwable t) {
         String logStr = Log.getStackTraceString(t);
         Log.e(TAG, logStr);
@@ -233,6 +229,17 @@ public final class MapleUtils {
         } catch (ClassNotFoundError e) {
             return null;
         }
+    }
+
+    /**
+     * Look up adn make a class inheritable.
+     * It will make the class non-final and make all its private constructors protected.
+     * @param className     The class name.
+     * @param classLoader   The class loader, or {@code null} for the boot class loader.
+     * @return  Indicate whether the operation has succeed.
+     */
+    public static boolean findAndMakeClassInheritable(String className, ClassLoader classLoader){
+        return MapleBridge.makeClassInheritable(findClass(className, classLoader));
     }
 
     /**
@@ -411,7 +418,7 @@ public final class MapleUtils {
      * for details.
      */
     public static boolean findMethodIsHooked(Class<?> clazz, String methodName, Object... parameterTypes){
-        return isHooked(findMethodExact(clazz, methodName, parameterTypes));
+        return MapleBridge.isHooked(findMethodExact(clazz, methodName, parameterTypes));
     }
 
     /**
@@ -425,7 +432,7 @@ public final class MapleUtils {
      * @throws ClassNotFoundError In case the target class or one of the parameter types couldn't be resolved.
      */
     public static boolean findMethodIsHooked(String className, ClassLoader classLoader, String methodName, Object... parameterTypes){
-        return isHooked(findMethodExact(findClass(className, classLoader), methodName, parameterTypes));
+        return MapleBridge.isHooked(findMethodExact(findClass(className, classLoader), methodName, parameterTypes));
     }
 
     /**

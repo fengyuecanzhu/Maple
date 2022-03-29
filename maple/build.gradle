@@ -65,7 +65,7 @@ publishing {
         maven(MavenPublication) {
             group = "me.fycz.maple"
             artifactId = "maple"
-            version = "1.3"
+            version = "1.4"
             afterEvaluate {
                 artifact bundleReleaseAar
                 artifact sourcesJar

@@ -35,8 +35,6 @@ class MainActivity : AppCompatActivity() {
 
         binding.btHookBefore.setOnClickListener {
             console(it)
-            bridge?.unhook()
-            bridge = null
             bridge =
                 MapleUtils.findAndHookMethod(
                     "me.fycz.demo.MainActivity",
@@ -55,8 +53,6 @@ class MainActivity : AppCompatActivity() {
 
         binding.btHookAfter.setOnClickListener {
             console(it)
-            bridge?.unhook()
-            bridge = null
             bridge =
                 MapleUtils.findAndHookMethod(
                     "me.fycz.demo.MainActivity",
@@ -75,8 +71,6 @@ class MainActivity : AppCompatActivity() {
 
         binding.btHookReplace.setOnClickListener {
             console(it)
-            bridge?.unhook()
-            bridge = null
             bridge =
                 MapleUtils.findAndHookMethod(
                     "me.fycz.demo.MainActivity",
