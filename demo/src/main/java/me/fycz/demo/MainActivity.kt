@@ -1,13 +1,16 @@
-package me.fycz.maple
+package me.fycz.demo
 
 import android.annotation.SuppressLint
 import android.os.Bundle
-import android.os.PersistableBundle
 import android.view.View
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import me.fycz.maple.databinding.ActivityMainBinding
+import me.fycz.demo.databinding.ActivityMainBinding
+import me.fycz.maple.MapleBridge
+import me.fycz.maple.MapleUtils
+import me.fycz.maple.MethodHook
+import me.fycz.maple.MethodReplacement
 
 /**
  * @author fengyue
@@ -36,7 +39,7 @@ class MainActivity : AppCompatActivity() {
             bridge = null
             bridge =
                 MapleUtils.findAndHookMethod(
-                    "me.fycz.maple.MainActivity",
+                    "me.fycz.demo.MainActivity",
                     this.classLoader,
                     "normal",
                     String::class.java,
@@ -56,7 +59,7 @@ class MainActivity : AppCompatActivity() {
             bridge = null
             bridge =
                 MapleUtils.findAndHookMethod(
-                    "me.fycz.maple.MainActivity",
+                    "me.fycz.demo.MainActivity",
                     this.classLoader,
                     "normal",
                     String::class.java,
@@ -76,7 +79,7 @@ class MainActivity : AppCompatActivity() {
             bridge = null
             bridge =
                 MapleUtils.findAndHookMethod(
-                    "me.fycz.maple.MainActivity",
+                    "me.fycz.demo.MainActivity",
                     this.classLoader,
                     "normal",
                     String::class.java,

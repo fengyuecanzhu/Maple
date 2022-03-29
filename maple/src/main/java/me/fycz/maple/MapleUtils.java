@@ -58,9 +58,9 @@ public final class MapleUtils {
      */
     private static final ClassLoader BOOTCLASSLOADER = MapleUtils.class.getClassLoader();
 
-    private static final ConcurrentHashMap<MemberCacheKey.Field, Optional<Field>> fieldCache = new ConcurrentHashMap<>();
-    private static final ConcurrentHashMap<MemberCacheKey.Method, Optional<Method>> methodCache = new ConcurrentHashMap<>();
-    private static final ConcurrentHashMap<MemberCacheKey.Constructor, Optional<Constructor<?>>> constructorCache = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<MemberCacheKey.Field, Field> fieldCache = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<MemberCacheKey.Method, Method> methodCache = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<MemberCacheKey.Constructor, Constructor<?>> constructorCache = new ConcurrentHashMap<>();
     private static final WeakHashMap<Object, HashMap<String, Object>> additionalFields = new WeakHashMap<>();
 
     private static final HashMap<String, ThreadLocal<AtomicInteger>> sMethodDepth = new HashMap<>();
@@ -245,15 +245,21 @@ public final class MapleUtils {
      */
     public static Field findField(Class<?> clazz, String fieldName) {
         var key = new MemberCacheKey.Field(clazz, fieldName);
-        return fieldCache.computeIfAbsent(key, k -> {
-            try {
-                Field newField = findFieldRecursiveImpl(k.clazz, k.name);
-                newField.setAccessible(true);
-                return Optional.of(newField);
-            } catch (NoSuchFieldException e) {
-                return Optional.empty();
-            }
-        }).orElseThrow(() -> new NoSuchFieldError(key.toString()));
+        if (fieldCache.containsKey(key)) {
+            Field field = fieldCache.get(key);
+            if (field == null)
+                throw new NoSuchFieldError(key.toString());
+            return field;
+        }
+        try {
+            Field field = findFieldRecursiveImpl(key.clazz, key.name);
+            field.setAccessible(true);
+            fieldCache.put(key, field);
+            return field;
+        } catch (NoSuchFieldException e) {
+            fieldCache.put(key, null);
+            throw new NoSuchFieldError(key.toString());
+        }
     }
 
     /**
@@ -489,15 +495,21 @@ public final class MapleUtils {
     public static Method findMethodExact(Class<?> clazz, String methodName, Class<?>... parameterTypes) {
         var key = new MemberCacheKey.Method(clazz, methodName, parameterTypes, true);
 
-        return methodCache.computeIfAbsent(key, k -> {
-            try {
-                Method method = k.clazz.getDeclaredMethod(k.name, k.parameters);
-                method.setAccessible(true);
-                return Optional.of(method);
-            } catch (NoSuchMethodException e) {
-                return Optional.empty();
-            }
-        }).orElseThrow(() -> new NoSuchMethodError(key.toString()));
+        if (methodCache.containsKey(key)) {
+            Method method = methodCache.get(key);
+            if (method == null)
+                throw new NoSuchMethodError(key.toString());
+            return method;
+        }
+        try {
+            Method method = key.clazz.getDeclaredMethod(methodName, parameterTypes);
+            method.setAccessible(true);
+            methodCache.put(key, method);
+            return method;
+        } catch (NoSuchMethodException e) {
+            methodCache.put(key, null);
+            throw new NoSuchMethodError(key.toString());
+        }
     }
 
     /**
@@ -552,49 +564,57 @@ public final class MapleUtils {
      * @throws NoSuchMethodError In case no suitable method was found.
      */
     public static Method findMethodBestMatch(Class<?> clazz, String methodName, Class<?>... parameterTypes) {
-        // find the exact matching method first
-        try {
-            return findMethodExact(clazz, methodName, parameterTypes);
-        } catch (NoSuchMethodError ignored) {
-        }
-
         // then find the best match
         var key = new MemberCacheKey.Method(clazz, methodName, parameterTypes, false);
 
-        return methodCache.computeIfAbsent(key, k -> {
-            Method bestMatch = null;
-            Class<?> clz = k.clazz;
-            boolean considerPrivateMethods = true;
-            do {
-                for (Method method : clz.getDeclaredMethods()) {
-                    // don't consider private methods of superclasses
-                    if (!considerPrivateMethods && Modifier.isPrivate(method.getModifiers()))
-                        continue;
+        if (methodCache.containsKey(key)) {
+            Method method = methodCache.get(key);
+            if (method == null)
+                throw new NoSuchMethodError(key.toString());
+            return method;
+        }
 
-                    // compare name and parameters
-                    if (method.getName().equals(k.name) && ClassUtils.isAssignable(
-                            k.parameters,
-                            method.getParameterTypes(),
-                            true)) {
-                        // get accessible version of method
-                        if (bestMatch == null || MemberUtilsX.compareMethodFit(
-                                method,
-                                bestMatch,
-                                k.parameters) < 0) {
-                            bestMatch = method;
-                        }
+        try {
+            Method method = findMethodExact(clazz, methodName, parameterTypes);
+            methodCache.put(key, method);
+            return method;
+        } catch (NoSuchMethodError ignored) {}
+
+        Method bestMatch = null;
+        Class<?> clz = key.clazz;
+        boolean considerPrivateMethods = true;
+        do {
+            for (Method method : clz.getDeclaredMethods()) {
+                // don't consider private methods of superclasses
+                if (!considerPrivateMethods && Modifier.isPrivate(method.getModifiers()))
+                    continue;
+
+                // compare name and parameters
+                if (method.getName().equals(key.name) && ClassUtils.isAssignable(
+                        key.parameters,
+                        method.getParameterTypes(),
+                        true)) {
+                    // get accessible version of method
+                    if (bestMatch == null || MemberUtilsX.compareMethodFit(
+                            method,
+                            bestMatch,
+                            key.parameters) < 0) {
+                        bestMatch = method;
                     }
                 }
-                considerPrivateMethods = false;
-            } while ((clz = clz.getSuperclass()) != null);
-
-            if (bestMatch != null) {
-                bestMatch.setAccessible(true);
-                return Optional.of(bestMatch);
-            } else {
-                return Optional.empty();
             }
-        }).orElseThrow(() -> new NoSuchMethodError(key.toString()));
+            considerPrivateMethods = false;
+        } while ((clz = clz.getSuperclass()) != null);
+
+        if (bestMatch != null) {
+            bestMatch.setAccessible(true);
+            methodCache.put(key, bestMatch);
+            return bestMatch;
+        } else {
+            NoSuchMethodError e = new NoSuchMethodError(key.toString());
+            methodCache.put(key, null);
+            throw e;
+        }
     }
 
     /**
@@ -742,15 +762,22 @@ public final class MapleUtils {
     public static Constructor<?> findConstructorExact(Class<?> clazz, Class<?>... parameterTypes) {
         var key = new MemberCacheKey.Constructor(clazz, parameterTypes, true);
 
-        return constructorCache.computeIfAbsent(key, k -> {
-            try {
-                Constructor<?> constructor = k.clazz.getDeclaredConstructor(k.parameters);
-                constructor.setAccessible(true);
-                return Optional.of(constructor);
-            } catch (NoSuchMethodException e) {
-                return Optional.empty();
-            }
-        }).orElseThrow(() -> new NoSuchMethodError(key.toString()));
+        if (constructorCache.containsKey(key)) {
+            Constructor<?> constructor = constructorCache.get(key);
+            if (constructor == null)
+                throw new NoSuchMethodError(key.toString());
+            return constructor;
+        }
+
+        try {
+            Constructor<?> constructor = key.clazz.getDeclaredConstructor(parameterTypes);
+            constructor.setAccessible(true);
+            constructorCache.put(key, constructor);
+            return constructor;
+        } catch (NoSuchMethodException e) {
+            constructorCache.put(key, null);
+            throw new NoSuchMethodError(key.toString());
+        }
     }
 
     /**
@@ -781,41 +808,48 @@ public final class MapleUtils {
      * <p>See {@link #findMethodBestMatch(Class, String, Class...)} for details.
      */
     public static Constructor<?> findConstructorBestMatch(Class<?> clazz, Class<?>... parameterTypes) {
-        // find the exact matching constructor first
-        try {
-            return findConstructorExact(clazz, parameterTypes);
-        } catch (NoSuchMethodError ignored) {
-        }
-
         // then find the best match
         var key = new MemberCacheKey.Constructor(clazz, parameterTypes, false);
+        if (constructorCache.containsKey(key)) {
+            Constructor<?> constructor = constructorCache.get(key);
+            if (constructor == null)
+                throw new NoSuchMethodError(key.toString());
+            return constructor;
+        }
 
-        return constructorCache.computeIfAbsent(key, k -> {
-            Constructor<?> bestMatch = null;
-            Constructor<?>[] constructors = k.clazz.getDeclaredConstructors();
-            for (Constructor<?> constructor : constructors) {
-                // compare name and parameters
-                if (ClassUtils.isAssignable(
-                        k.parameters,
-                        constructor.getParameterTypes(),
-                        true)) {
-                    // get accessible version of method
-                    if (bestMatch == null || MemberUtilsX.compareConstructorFit(
-                            constructor,
-                            bestMatch,
-                            k.parameters) < 0) {
-                        bestMatch = constructor;
-                    }
+        try {
+            Constructor<?> constructor = findConstructorExact(clazz, parameterTypes);
+            constructorCache.put(key, constructor);
+            return constructor;
+        } catch (NoSuchMethodError ignored) {}
+
+        Constructor<?> bestMatch = null;
+        Constructor<?>[] constructors = key.clazz.getDeclaredConstructors();
+        for (Constructor<?> constructor : constructors) {
+            // compare name and parameters
+            if (ClassUtils.isAssignable(
+                    key.parameters,
+                    constructor.getParameterTypes(),
+                    true)) {
+                // get accessible version of method
+                if (bestMatch == null || MemberUtilsX.compareConstructorFit(
+                        constructor,
+                        bestMatch,
+                        key.parameters) < 0) {
+                    bestMatch = constructor;
                 }
             }
+        }
 
-            if (bestMatch != null) {
-                bestMatch.setAccessible(true);
-                return Optional.of(bestMatch);
-            } else {
-                return Optional.empty();
-            }
-        }).orElseThrow(() -> new NoSuchMethodError(key.toString()));
+        if (bestMatch != null) {
+            bestMatch.setAccessible(true);
+            constructorCache.put(key, bestMatch);
+            return bestMatch;
+        } else {
+            NoSuchMethodError e = new NoSuchMethodError(key.toString());
+            constructorCache.put(key, null);
+            throw e;
+        }
     }
 
     /**
