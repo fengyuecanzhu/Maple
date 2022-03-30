@@ -1,6 +1,6 @@
 # Maple
 
-A Java hook framwork (Xposed style) for Android Runtime (ART) used [LSPlant](https://github.com/LSPosed/LSPlant).
+A Java hook framwork (Xposed style) for Android Runtime (ART) implemented by [LSPlant](https://github.com/LSPosed/LSPlant).
 
 ## Features
 
