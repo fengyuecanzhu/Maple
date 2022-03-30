@@ -13,12 +13,12 @@ A Java hook framwork (Xposed style) for Android Runtime (ART) used [LSPlant](htt
 #### 1、Before usage
 
 Import method:
+
 Add the maven repository in your build.gradle(Project) (new version Android Studio please in settings.gradle):
 
 ```groovy
 allprojects {
     repositories {
-        ...
         mavenCentral()
     }
 }
