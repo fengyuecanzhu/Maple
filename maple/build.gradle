@@ -65,7 +65,7 @@ publishing {
         maven(MavenPublication) {
             group = "me.fycz.maple"
             artifactId = "maple"
-            version = "1.8"
+            version = "1.9"
             afterEvaluate {
                 artifact bundleReleaseAar
                 artifact sourcesJar
@@ -123,7 +123,7 @@ signing {
 }
 
 dependencies {
-    implementation("org.lsposed.lsplant:lsplant:3.2")
+    implementation("org.lsposed.lsplant:lsplant:4.0")
     //可以参考这个发布
     implementation("io.github.vvb2060.ndk:dobby:1.2")
     compileOnly("androidx.annotation:annotation:1.3.0")
