@@ -97,7 +97,11 @@ public final class MapleUtils {
 
     public static void log(Throwable t) {
         String logStr = Log.getStackTraceString(t);
-        Log.e(TAG, logStr);
+        log(logStr);
+    }
+
+    public static void log(String msg) {
+        Log.e(TAG, msg);
     }
 
     /**
