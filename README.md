@@ -28,7 +28,7 @@ Then import the framework in your build.gradle(app):
 
 ```groovy
 dependencies {
-    implementation "me.fycz.maple:maple:1.9"
+    implementation "me.fycz.maple:maple:2.0"
 }
 ```
 
